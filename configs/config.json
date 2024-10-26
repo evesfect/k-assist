@@ -1,0 +1,11 @@
+{
+    "os": "linux",
+    "user": "your_username",
+    "llm": {
+        "provider": "gemini",
+        "api_key": "your-gemini-api-key-here",
+        "model": "gemini-pro"
+    },
+    "max_tokens": 50,
+    "shell": ""
+}
