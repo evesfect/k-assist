@@ -12,7 +12,6 @@ type Handler struct {
 	shellType string
 }
 
-// NewHandler creates a new shell handler
 func NewHandler(shellType string) *Handler {
 	if shellType == "" {
 		shellType = detectShell()
@@ -20,7 +19,6 @@ func NewHandler(shellType string) *Handler {
 	return &Handler{shellType: shellType}
 }
 
-// detectShell determines the current shell type
 func detectShell() string {
 	if runtime.GOOS == "windows" {
 		return "powershell"
@@ -32,7 +30,6 @@ func detectShell() string {
 	return "bash"
 }
 
-// FormatCommand formats a command for the current shell
 func (h *Handler) FormatCommand(command string) string {
 	switch h.shellType {
 	case "powershell":
@@ -44,7 +41,6 @@ func (h *Handler) FormatCommand(command string) string {
 	}
 }
 
-// OutputCommand outputs the command to stdout
 func (h *Handler) OutputCommand(command string) error {
 	var cmd *exec.Cmd
 
