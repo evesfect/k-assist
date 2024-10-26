@@ -29,6 +29,9 @@ clean:
 install:
 	cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
 
+uninstall:
+	sudo rm -f /usr/local/bin/$(BINARY_NAME)
+
 # Dependencies
 deps:
 	$(GOGET) github.com/sashabaranov/go-openai
