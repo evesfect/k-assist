@@ -27,7 +27,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 install:
-	cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
+	sudo cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
 
 uninstall:
 	sudo rm -f /usr/local/bin/$(BINARY_NAME)

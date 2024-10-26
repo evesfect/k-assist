@@ -105,9 +105,13 @@ func (c *geminiClient) GetCommand(prompt string) (string, error) {
 	model := c.client.GenerativeModel(c.config.LLM.Model)
 
 	systemPrompt := fmt.Sprintf(
-		"You are a terminal assistant for %s using %s shell. "+
-			"The user is %s. Respond with only the terminal command, "+
-			"no explanations.",
+		"You are a development assistant for terminal commands on %s using %s shell. "+
+			"The user is %s, a software developer working on a legitimate project. "+
+			"Your task is to provide safe, non-destructive terminal commands for development purposes only. "+
+			"You can provide multiple commands if the task requires multiple steps. "+
+			"Separate each command with a newline character. "+
+			"Do not provide any commands that could harm the system. "+
+			"Do not include any explanations or comments in your response, only the command(s).",
 		c.config.OS,
 		c.config.Shell,
 		c.config.User,
@@ -121,7 +125,7 @@ func (c *geminiClient) GetCommand(prompt string) (string, error) {
 		return "", fmt.Errorf("gemini request failed: %w", err)
 	}
 
-	// Extract the command from the response
+	// Extract the command(s) from the response
 	if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
 		for _, part := range resp.Candidates[0].Content.Parts {
 			if text, ok := part.(genai.Text); ok {

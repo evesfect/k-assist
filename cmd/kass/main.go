@@ -39,8 +39,8 @@ func main() {
 		logger.Fatalf("Error getting command from LLM: %v", err)
 	}
 
-	// Execute command
+	// Output command for user to edit and potentially execute
 	if err := shellHandler.OutputCommand(command); err != nil {
-		logger.Fatalf("Error executing command: %v", err)
+		logger.Printf("Error with command: %v", err)
 	}
 }
