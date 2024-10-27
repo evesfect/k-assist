@@ -1,4 +1,4 @@
-.PHONY: build test clean install
+.PHONY: build test clean install uninstall cleaninstall
 
 # Binary name
 BINARY_NAME=kass
@@ -31,6 +31,12 @@ install:
 
 uninstall:
 	sudo rm -f /usr/local/bin/$(BINARY_NAME)
+
+cleaninstall:
+	make uninstall
+	make clean
+	make build
+	make install
 
 # Dependencies
 deps:

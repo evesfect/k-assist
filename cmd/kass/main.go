@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -10,12 +12,29 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Usage: kass \"<prompt>\"")
+	// Define flags
+	codeFlag := flag.Bool("c", false, "Get code-related information")
+	flag.Parse()
+
+	// Check if a prompt is provided
+	if flag.NArg() < 1 {
+		log.Fatal("Usage: kass [-flag]] \"<prompt>\"")
 	}
 
 	// Initialize logger
 	logger := log.New(os.Stderr, "[kass] ", log.LstdFlags)
+
+	// Get current working directory
+	currentDir, err := os.Getwd()
+	if err != nil {
+		logger.Fatalf("Error getting current directory: %v", err)
+	}
+
+	// List directory contents
+	dirContents, err := os.ReadDir(currentDir)
+	if err != nil {
+		logger.Fatalf("Error reading directory contents: %v", err)
+	}
 
 	// Load configuration
 	cfg, err := config.Load()
@@ -29,18 +48,34 @@ func main() {
 		logger.Fatalf("Error creating LLM client: %v", err)
 	}
 
-	// Get shell handler
-	shellHandler := shell.NewHandler(cfg.Shell)
+	// Process prompt
+	prompt := flag.Arg(0)
 
-	// Process prompt and get command
-	prompt := os.Args[1]
-	command, err := llmClient.GetCommand(prompt)
-	if err != nil {
-		logger.Fatalf("Error getting command from LLM: %v", err)
+	// Add current directory information to the prompt
+	dirInfo := fmt.Sprintf("Current directory: %s\nDirectory contents:\n", currentDir)
+	for _, entry := range dirContents {
+		dirInfo += fmt.Sprintf("- %s\n", entry.Name())
 	}
+	prompt = dirInfo + "\n" + prompt
 
-	// Output command for user to edit and potentially execute
-	if err := shellHandler.OutputCommand(command); err != nil {
-		logger.Printf("Error with command: %v", err)
+	if *codeFlag {
+		// Chat (-c flag) single prompt
+		response, err := llmClient.GetResponse(prompt)
+		if err != nil {
+			logger.Fatalf("Error getting response from LLM: %v", err)
+		}
+		fmt.Println(response)
+	} else {
+		// Normal operation
+		command, err := llmClient.GetCommand(prompt)
+		if err != nil {
+			logger.Fatalf("Error getting command from LLM: %v", err)
+		}
+
+		// Output command for user to edit and potentially execute
+		shellHandler := shell.NewHandler(cfg.Shell)
+		if err := shellHandler.OutputCommand(command); err != nil {
+			logger.Printf("Error with command: %v", err)
+		}
 	}
 }
