@@ -1,3 +1,3 @@
 # k-assist
 
-Cross-platform terminal assistant focusing simplicity
+Cross-platform terminal assistant focused on simplicity
