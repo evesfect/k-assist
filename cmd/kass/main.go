@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/evesfect/k-assist/internal/config"
+	"github.com/evesfect/k-assist/internal/dirutil"
 	"github.com/evesfect/k-assist/internal/llm"
 	"github.com/evesfect/k-assist/internal/shell"
 )
@@ -14,11 +15,12 @@ import (
 func main() {
 	// Define flags
 	codeFlag := flag.Bool("c", false, "Get code-related information")
+	allFlag := flag.Bool("a", false, "Include all subdirectories and files")
 	flag.Parse()
 
 	// Check if a prompt is provided
 	if flag.NArg() < 1 {
-		log.Fatal("Usage: kass [-flag]] \"<prompt>\"")
+		log.Fatal("Usage: kass [-flag] \"<prompt>\"")
 	}
 
 	// Initialize logger
@@ -31,7 +33,12 @@ func main() {
 	}
 
 	// List directory contents
-	dirContents, err := os.ReadDir(currentDir)
+	var dirInfo string
+	if *allFlag {
+		dirInfo, err = dirutil.GetAllDirectoryContents(currentDir)
+	} else {
+		dirInfo, err = dirutil.GetCurrentDirectoryContents(currentDir)
+	}
 	if err != nil {
 		logger.Fatalf("Error reading directory contents: %v", err)
 	}
@@ -52,10 +59,6 @@ func main() {
 	prompt := flag.Arg(0)
 
 	// Add current directory information to the prompt
-	dirInfo := fmt.Sprintf("Current directory: %s\nDirectory contents:\n", currentDir)
-	for _, entry := range dirContents {
-		dirInfo += fmt.Sprintf("- %s\n", entry.Name())
-	}
 	prompt = dirInfo + "\n" + prompt
 
 	if *codeFlag {
