@@ -62,6 +62,7 @@ func (c *geminiClient) GetCommand(prompt string) (string, error) {
 			"The user is %s, a software developer working on a legitimate project. "+
 			"Your task is to provide safe, non-destructive terminal commands for development purposes only. "+
 			"You can provide multiple commands if the task requires multiple steps. "+
+			"You should lean towards using standard tools and libraries when possible. You can also use kass to install additional tools and libraries if needed. "+
 			"Separate each command with a newline character. "+
 			"Do not provide any commands that could harm the system. "+
 			"Do not include any explanations or comments in your response, only the command(s).",

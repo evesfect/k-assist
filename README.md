@@ -9,6 +9,20 @@ k-assist (command: `kass`) is a cross-platform terminal assistant focused on sim
 - Cross-platform support (Linux, macOS, Windows)
 - Support for multiple shells (bash, zsh, powershell)
 
+## Notes
+
+- You can generate your free gemini api key [here](https://ai.google.dev/gemini-api/docs/api-key)
+
+- Don't forget to edit the configuration file and add your api key after installation. More details [here](#configuration).
+
+- Kass does not preserve a chat session with the LLM, you won't need to worry about your previous messages affecting the current one. However, kass does have access to your shell history so it will see your previous commands when needed.
+
+- It is not recommended to use the `-a` and `-A` flag inside big directories like home/, as it may cause unexpected errors due to the possibility of it containing sensitive data, and violating LLM providers' usage policies.
+
+- If you encounter a safety error from the LLM provider that doesn't make sense, it is most likely due to the above.
+
+- Usage of `-a` and `-A` will substantially increase the time it takes to generate a response depending on the size of the directory. You may need to adjust your `max_tokens` setting in the configuration file if you want to use them extensively.
+
 ## Installation
 
 ### Prerequisites
@@ -27,9 +41,17 @@ cd k-assist
 
 1. Build and install:
 
+For linux and macOS:
+
 ```bash
 make build
-make cleaninstall
+make install
+```
+
+For windows:
+
+```bash
+The windows installer is not yet available. :(
 ```
 
 ## Configuration
@@ -64,24 +86,33 @@ kass is used to provide command assistance by default.
 
 ```bash
 kass "how many docker containers are running right now?"
-
 docker ps | wc -l
 ```
+
+kass can output multiple commands when necessary, line by line. Each command can be edited and executed individually. Use enter to execute the command, or ^C to interrupt the output.
 
 ### Chat Functionality
 
 To enable chat functionality, use the `-c` flag:
 
 ```bash
-kass -c "Explain how can i create a recovery image for my system"
+kass -c "explain how can i create a recovery image for my system"
 ```
 
 ### Including All Directory Contents
 
-To include all subdirectories and files in the context, use the `-a` flag:
+To include all subdirectories in the context, use the `-a` flag:
 
 ```bash
 kass -a "compress all the pdf files in the project docs directory"
+```
+
+### Including All Directory Contents with Data
+
+To include all subdirectories and files with their contents, use the `-A` flag:
+
+```bash
+kass -A "create a compressed backup of the project excluding node_modules, build directories, and temporary files""
 ```
 
 ### Combining Flags
@@ -89,7 +120,7 @@ kass -a "compress all the pdf files in the project docs directory"
 You can combine multiple flags to get content aware assistance easily.
 
 ```bash
-kass -a -c "Analyze my project structure and suggest improvements"
+kass -A -c "analyze my project structure and suggest improvements"
 ```
 
 ### Error Assistance
