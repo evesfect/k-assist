@@ -45,3 +45,41 @@ func GetAllDirectoryContents(dir string) (string, error) {
 
 	return info.String(), nil
 }
+
+// GetAllDirectoryContentsWithData returns information about all files and their contents
+func GetAllDirectoryContentsWithData(dir string) (string, error) {
+	var info strings.Builder
+	info.WriteString(fmt.Sprintf("Current directory: %s\nAll directory contents with data:\n", dir))
+
+	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+
+		// Skip if it's a directory
+		if f.IsDir() {
+			info.WriteString(fmt.Sprintf("Directory: %s\n", relPath))
+			return nil
+		}
+
+		// Read file contents
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("error reading file %s: %w", relPath, err)
+		}
+
+		info.WriteString(fmt.Sprintf("\nFile: %s\nContents:\n%s\n", relPath, string(data)))
+		return nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return info.String(), nil
+}

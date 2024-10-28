@@ -59,7 +59,7 @@ func (h *Handler) FormatCommand(command string) string {
 }
 
 func (h *Handler) OutputCommand(commands string) error {
-	rl, err := readline.New("> ")
+	rl, err := readline.New("")
 	if err != nil {
 		return fmt.Errorf("error creating readline instance: %w", err)
 	}
@@ -75,31 +75,27 @@ func (h *Handler) OutputCommand(commands string) error {
 	}
 
 	for _, cmd := range cmdList {
-		fmt.Printf("Command: %s\n", cmd)
-		rl.SetPrompt("Execute? [Y/n] ")
+		// Set the prompt with PS1-like style
+		rl.SetPrompt(fmt.Sprintf("%s $ ", currentDir))
 
-		for {
-			response, err := rl.Readline()
+		// Pre-populate the line with the suggested command
+		rl.WriteStdin([]byte(cmd))
+
+		// Get user input (they can edit or just press enter)
+		command, err := rl.Readline()
+		if err != nil {
+			return fmt.Errorf("error reading line: %w", err)
+		}
+
+		// Execute the command (original or modified)
+		if command = strings.TrimSpace(command); command != "" {
+			newDir, err := h.executeCommand(command, currentDir)
 			if err != nil {
-				return fmt.Errorf("error reading line: %w", err)
+				h.logger.Printf("Error executing command: %v\n", err)
+				h.handleError(h.logger, h.llmClient, h.config, err.Error())
+				return nil
 			}
-
-			response = strings.ToLower(strings.TrimSpace(response))
-			if response == "y" {
-				newDir, err := h.executeCommand(cmd, currentDir)
-				if err != nil {
-					h.logger.Printf("Error executing command: %v\n", err)
-					h.handleError(h.logger, h.llmClient, h.config, err.Error())
-					return nil
-				} else {
-					currentDir = newDir
-				}
-				break
-			} else if response == "n" {
-				break
-			} else {
-				fmt.Println("Please enter 'y' to execute, 'n' to skip, or '^C' to quit.")
-			}
+			currentDir = newDir
 		}
 	}
 

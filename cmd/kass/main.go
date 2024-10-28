@@ -16,7 +16,13 @@ func main() {
 	// Define flags
 	codeFlag := flag.Bool("c", false, "Get code-related information")
 	allFlag := flag.Bool("a", false, "Include all subdirectories and files")
+	allContentFlag := flag.Bool("A", false, "Include all subdirectories and files with their contents")
 	flag.Parse()
+
+	// Validate flag combinations
+	if *allFlag && *allContentFlag {
+		log.Fatal("Error: Cannot use both -a and -A flags together")
+	}
 
 	// Check prompt
 	if flag.NArg() < 1 {
@@ -34,7 +40,9 @@ func main() {
 
 	// List directory contents
 	var dirInfo string
-	if *allFlag {
+	if *allContentFlag {
+		dirInfo, err = dirutil.GetAllDirectoryContentsWithData(currentDir)
+	} else if *allFlag {
 		dirInfo, err = dirutil.GetAllDirectoryContents(currentDir)
 	} else {
 		dirInfo, err = dirutil.GetCurrentDirectoryContents(currentDir)
