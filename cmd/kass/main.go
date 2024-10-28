@@ -78,7 +78,7 @@ func main() {
 		}
 
 		// Output command for user to edit and execute
-		shellHandler := shell.NewHandler(cfg.Shell)
+		shellHandler := shell.NewHandler(cfg.Shell, logger, llmClient, cfg, handleErrorWithAssistance)
 		if err := shellHandler.OutputCommand(command); err != nil {
 			logger.Printf("Error with command: %v", err)
 			handleErrorWithAssistance(logger, llmClient, cfg, err.Error())
@@ -93,7 +93,7 @@ func handleErrorWithAssistance(logger *log.Logger, llmClient llm.Client, cfg *co
 	fmt.Scanln(&willAssist)
 
 	if willAssist == "Y" || willAssist == "y" {
-		shellHandler := shell.NewHandler(cfg.Shell)
+		shellHandler := shell.NewHandler(cfg.Shell, logger, llmClient, cfg, handleErrorWithAssistance)
 		history, err := shellHandler.GetHistory(20)
 		if err != nil {
 			logger.Printf("Warning: Could not get shell history: %v", err)

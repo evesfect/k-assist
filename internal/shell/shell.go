@@ -2,6 +2,7 @@ package shell
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,17 +10,29 @@ import (
 	"strings"
 
 	"github.com/chzyer/readline"
+	"github.com/evesfect/k-assist/internal/config"
+	"github.com/evesfect/k-assist/internal/llm"
 )
 
 type Handler struct {
-	shellType string
+	shellType   string
+	logger      *log.Logger
+	llmClient   llm.Client
+	config      *config.Config
+	handleError func(*log.Logger, llm.Client, *config.Config, string)
 }
 
-func NewHandler(shellType string) *Handler {
+func NewHandler(shellType string, logger *log.Logger, llmClient llm.Client, cfg *config.Config, handleError func(*log.Logger, llm.Client, *config.Config, string)) *Handler {
 	if shellType == "" {
 		shellType = detectShell()
 	}
-	return &Handler{shellType: shellType}
+	return &Handler{
+		shellType:   shellType,
+		logger:      logger,
+		llmClient:   llmClient,
+		config:      cfg,
+		handleError: handleError,
+	}
 }
 
 func detectShell() string {
@@ -74,9 +87,8 @@ func (h *Handler) OutputCommand(commands string) error {
 			if response == "y" {
 				newDir, err := h.executeCommand(cmd, currentDir)
 				if err != nil {
-					fmt.Printf("Error executing command: %v\n", err)
-					fmt.Printf("Do you want assistance from AI? [Y/n] ")
-
+					h.logger.Printf("Error executing command: %v\n", err)
+					h.handleError(h.logger, h.llmClient, h.config, err.Error())
 					return nil
 				} else {
 					currentDir = newDir
