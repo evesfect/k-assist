@@ -15,6 +15,7 @@ import (
 type Client interface {
 	GetCommand(prompt string) (string, error)
 	GetResponse(prompt string) (string, error)
+	HandleError(errOutput string, shellHistory string) (string, error)
 }
 
 // Factory function to create the appropriate LLM client
@@ -123,6 +124,46 @@ func (c *geminiClient) GetResponse(prompt string) (string, error) {
 	return "", fmt.Errorf("no valid text response from Gemini")
 }
 
+func (c *geminiClient) HandleError(errOutput string, shellHistory string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	model := c.client.GenerativeModel(c.config.LLM.Model)
+
+	systemPrompt := fmt.Sprintf(
+		"You are a helpful assistant for %s, a software developer. "+
+			"You are a terminal assistant for %s using %s shell. "+
+			"The user has encountered an error. You need to find solution for this error. "+
+			"You should provide a solution that is easy to understand and follow. "+
+			"Do not offer to continue the conversation, the user does not wish to continue the conversation. "+
+			"You can use the shell history to help you find the solution. "+
+			"The shell history is: { %s } "+
+			"The error encountered is: { %s }",
+		c.config.User,
+		c.config.OS,
+		c.config.Shell,
+		shellHistory,
+		errOutput,
+	)
+
+	fullPrompt := systemPrompt
+
+	resp, err := model.GenerateContent(ctx, genai.Text(fullPrompt))
+	if err != nil {
+		return "", fmt.Errorf("gemini request failed: %w", err)
+	}
+
+	if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
+		for _, part := range resp.Candidates[0].Content.Parts {
+			if text, ok := part.(genai.Text); ok {
+				return string(text), nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("no valid text response from Gemini")
+}
+
 // OpenAI implementation
 type openAIClient struct {
 	client *openai.Client
@@ -176,6 +217,10 @@ func (c *openAIClient) GetResponse(prompt string) (string, error) {
 	return "", fmt.Errorf("OpenAI API not implemented yet")
 }
 
+func (c *openAIClient) HandleError(errOutput string, shellHistory string) (string, error) {
+	return "", fmt.Errorf("OpenAI API not implemented yet")
+}
+
 // Claude implementation (placeholder - implement if needed)
 type claudeClient struct {
 	config *config.Config
@@ -190,5 +235,9 @@ func (c *claudeClient) GetCommand(prompt string) (string, error) {
 }
 
 func (c *claudeClient) GetResponse(prompt string) (string, error) {
+	return "", fmt.Errorf("claude API not implemented yet")
+}
+
+func (c *claudeClient) HandleError(errOutput string, shellHistory string) (string, error) {
 	return "", fmt.Errorf("claude API not implemented yet")
 }

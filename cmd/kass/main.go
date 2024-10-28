@@ -18,7 +18,7 @@ func main() {
 	allFlag := flag.Bool("a", false, "Include all subdirectories and files")
 	flag.Parse()
 
-	// Check if a prompt is provided
+	// Check prompt
 	if flag.NArg() < 1 {
 		log.Fatal("Usage: kass [-flag] \"<prompt>\"")
 	}
@@ -62,23 +62,49 @@ func main() {
 	prompt = dirInfo + "\n" + prompt
 
 	if *codeFlag {
-		// Chat (-c flag) single prompt
 		response, err := llmClient.GetResponse(prompt)
 		if err != nil {
-			logger.Fatalf("Error getting response from LLM: %v", err)
+			logger.Printf("Error getting response from LLM: %v", err)
+			handleErrorWithAssistance(logger, llmClient, cfg, err.Error())
+			return
 		}
 		fmt.Println(response)
 	} else {
-		// Normal operation
 		command, err := llmClient.GetCommand(prompt)
 		if err != nil {
-			logger.Fatalf("Error getting command from LLM: %v", err)
+			logger.Printf("Error getting command from LLM: %v", err)
+			handleErrorWithAssistance(logger, llmClient, cfg, err.Error())
+			return
 		}
 
-		// Output command for user to edit and potentially execute
+		// Output command for user to edit and execute
 		shellHandler := shell.NewHandler(cfg.Shell)
 		if err := shellHandler.OutputCommand(command); err != nil {
 			logger.Printf("Error with command: %v", err)
+			handleErrorWithAssistance(logger, llmClient, cfg, err.Error())
+			return
 		}
+	}
+}
+
+func handleErrorWithAssistance(logger *log.Logger, llmClient llm.Client, cfg *config.Config, errResponse string) {
+	fmt.Printf("Would you like assistance with this error? [Y/n] ")
+	var willAssist string
+	fmt.Scanln(&willAssist)
+
+	if willAssist == "Y" || willAssist == "y" {
+		shellHandler := shell.NewHandler(cfg.Shell)
+		history, err := shellHandler.GetHistory(20)
+		if err != nil {
+			logger.Printf("Warning: Could not get shell history: %v", err)
+			history = "No shell history available"
+		}
+
+		response, err := llmClient.HandleError(errResponse, history)
+		if err != nil {
+			logger.Printf("Error getting assistance: %v", err)
+			return
+		}
+		fmt.Println(response)
 	}
 }

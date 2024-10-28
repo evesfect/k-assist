@@ -62,7 +62,7 @@ func (h *Handler) OutputCommand(commands string) error {
 
 	for _, cmd := range cmdList {
 		fmt.Printf("Command: %s\n", cmd)
-		rl.SetPrompt("Execute? (y/n/q): ")
+		rl.SetPrompt("Execute? [Y/n] ")
 
 		for {
 			response, err := rl.Readline()
@@ -75,16 +75,17 @@ func (h *Handler) OutputCommand(commands string) error {
 				newDir, err := h.executeCommand(cmd, currentDir)
 				if err != nil {
 					fmt.Printf("Error executing command: %v\n", err)
+					fmt.Printf("Do you want assistance from AI? [Y/n] ")
+
+					return nil
 				} else {
 					currentDir = newDir
 				}
 				break
 			} else if response == "n" {
 				break
-			} else if response == "q" {
-				return nil
 			} else {
-				fmt.Println("Please enter 'y' to execute, 'n' to skip, or 'q' to quit.")
+				fmt.Println("Please enter 'y' to execute, 'n' to skip, or '^C' to quit.")
 			}
 		}
 	}
@@ -129,4 +130,45 @@ func (h *Handler) executeCommand(command, workDir string) (string, error) {
 	}
 
 	return workDir, nil
+}
+
+func (h *Handler) GetHistory(lines int) (string, error) {
+	var historyFile string
+	var cmd *exec.Cmd
+
+	switch h.shellType {
+	case "bash":
+		historyFile = filepath.Join(os.Getenv("HOME"), ".bash_history")
+	case "zsh":
+		historyFile = filepath.Join(os.Getenv("HOME"), ".zsh_history")
+	case "powershell":
+		cmd = exec.Command("powershell", "-Command",
+			fmt.Sprintf("Get-History -Count %d | Format-Table -Property CommandLine -HideTableHeaders", lines))
+	default:
+		return "", fmt.Errorf("unsupported shell type: %s", h.shellType)
+	}
+
+	if h.shellType != "powershell" {
+		// For Unix shells, read from history file
+		content, err := os.ReadFile(historyFile)
+		if err != nil {
+			return "", fmt.Errorf("error reading history file: %w", err)
+		}
+
+		// Split into lines and get last N lines
+		historyLines := strings.Split(string(content), "\n")
+		start := len(historyLines) - lines
+		if start < 0 {
+			start = 0
+		}
+		return strings.Join(historyLines[start:], "\n"), nil
+	}
+
+	// Execute PowerShell command
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("error getting PowerShell history: %w", err)
+	}
+
+	return string(output), nil
 }
