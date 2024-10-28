@@ -93,6 +93,20 @@ func handleErrorWithAssistance(logger *log.Logger, llmClient llm.Client, cfg *co
 	fmt.Scanln(&willAssist)
 
 	if willAssist == "Y" || willAssist == "y" {
+		// Get current directory information
+		currentDir, err := os.Getwd()
+		if err != nil {
+			logger.Printf("Warning: Could not get current directory: %v", err)
+		}
+
+		// Get directory contents
+		var dirInfo string
+		dirInfo, err = dirutil.GetCurrentDirectoryContents(currentDir)
+		if err != nil {
+			logger.Printf("Warning: Could not read directory contents: %v", err)
+			dirInfo = "No directory information available"
+		}
+
 		shellHandler := shell.NewHandler(cfg.Shell, logger, llmClient, cfg, handleErrorWithAssistance)
 		history, err := shellHandler.GetHistory(20)
 		if err != nil {
@@ -100,7 +114,8 @@ func handleErrorWithAssistance(logger *log.Logger, llmClient llm.Client, cfg *co
 			history = "No shell history available"
 		}
 
-		response, err := llmClient.HandleError(errResponse, history)
+		// Add directory information to error context
+		response, err := llmClient.HandleError(errResponse, dirInfo+"\n"+history)
 		if err != nil {
 			logger.Printf("Error getting assistance: %v", err)
 			return

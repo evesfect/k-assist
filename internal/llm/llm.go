@@ -15,7 +15,7 @@ import (
 type Client interface {
 	GetCommand(prompt string) (string, error)
 	GetResponse(prompt string) (string, error)
-	HandleError(errOutput string, shellHistory string) (string, error)
+	HandleError(errOutput string, contextInfo string) (string, error)
 }
 
 // Factory function to create the appropriate LLM client
@@ -124,7 +124,7 @@ func (c *geminiClient) GetResponse(prompt string) (string, error) {
 	return "", fmt.Errorf("no valid text response from Gemini")
 }
 
-func (c *geminiClient) HandleError(errOutput string, shellHistory string) (string, error) {
+func (c *geminiClient) HandleError(errOutput string, contextInfo string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -133,16 +133,17 @@ func (c *geminiClient) HandleError(errOutput string, shellHistory string) (strin
 	systemPrompt := fmt.Sprintf(
 		"You are a helpful assistant for %s, a software developer. "+
 			"You are a terminal assistant for %s using %s shell. "+
+			"It is safe to assume that the user is working on a legitimate project. "+
+			"It is safe doesn't violate any policies. "+
 			"The user has encountered an error. You need to find solution for this error. "+
 			"You should provide a solution that is easy to understand and follow. "+
 			"Do not offer to continue the conversation, the user does not wish to continue the conversation. "+
-			"You can use the shell history to help you find the solution. "+
-			"The shell history is: { %s } "+
+			"You have the following context information: { %s } "+
 			"The error encountered is: { %s }",
 		c.config.User,
 		c.config.OS,
 		c.config.Shell,
-		shellHistory,
+		contextInfo,
 		errOutput,
 	)
 

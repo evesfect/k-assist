@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -118,12 +119,19 @@ func (h *Handler) executeCommand(command, workDir string) (string, error) {
 	}
 
 	cmd.Dir = workDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+
+	// Create pipes for stdout and stderr
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
 
 	err := cmd.Run()
 	if err != nil {
+		// If there's stderr output, include it in the error
+		if stderr.Len() > 0 {
+			return workDir, fmt.Errorf("%v: %s", err, stderr.String())
+		}
 		return workDir, err
 	}
 
